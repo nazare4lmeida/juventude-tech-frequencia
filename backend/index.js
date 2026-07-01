@@ -419,8 +419,6 @@ app.get(
         );
         return { ...aluno, total_presencas: datasPresentes.size };
       });
-      console.log(
-        "AUDITORIA AMOSTRA:",
 
       res.json({ total: alunosComCalculo.length, alunos: alunosComCalculo });
     } catch (err) {
