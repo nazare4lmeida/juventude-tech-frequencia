@@ -29,7 +29,9 @@ export default function App() {
     try {
       const { userData, timestamp } = JSON.parse(s);
       if (Date.now() - timestamp < 12 * 60 * 60 * 1000) return userData;
-    } catch {}
+    } catch (error) {
+      console.warn("Invalid session data", error);
+    }
     return null;
   });
 
@@ -39,23 +41,35 @@ export default function App() {
   });
 
   const [view, setView] = useState("home");
-  const [form, setForm] = useState(dadosSalvos || { email: "", dataNasc: "", formacao: "" });
+  const [form, setForm] = useState(
+    dadosSalvos || { email: "", dataNasc: "", formacao: "" },
+  );
   const [historico, setHistorico] = useState([]);
   const [popup, setPopup] = useState({ show: false, msg: "", tipo: "" });
-  const [feedback, setFeedback] = useState({ nota: 0, revisao: "", modal: false });
+  const [feedback, setFeedback] = useState({
+    nota: 0,
+    revisao: "",
+    modal: false,
+  });
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const s = localStorage.getItem("juventudetech_theme");
     return s ? JSON.parse(s) : true;
   });
   const [currentTime, setCurrentTime] = useState(
-    new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    new Date().toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
   );
   const [showManualPublico, setShowManualPublico] = useState(false);
 
   // Redireciona admin para dashboard
   useEffect(() => {
     if (user?.role === "admin") {
-      const t = setTimeout(() => setView((v) => (v === "home" ? "admin" : v)), 0);
+      const t = setTimeout(
+        () => setView((v) => (v === "home" ? "admin" : v)),
+        0,
+      );
       return () => clearTimeout(t);
     }
   }, [user?.role]);
@@ -63,7 +77,12 @@ export default function App() {
   // Relógio
   useEffect(() => {
     const t = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
+      setCurrentTime(
+        new Date().toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      );
     }, 10000);
     return () => clearInterval(t);
   }, []);
@@ -91,7 +110,11 @@ export default function App() {
       const res = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.email.trim().toLowerCase(), dataNascimento: dataParaEnvio, formacao: form.formacao }),
+        body: JSON.stringify({
+          email: form.email.trim().toLowerCase(),
+          dataNascimento: dataParaEnvio,
+          formacao: form.formacao,
+        }),
       });
       const data = await res.json();
 
@@ -101,11 +124,19 @@ export default function App() {
       }
 
       setUser(data);
-      localStorage.setItem("juventudetech_session", JSON.stringify({ userData: data, timestamp: Date.now() }));
-      localStorage.setItem("juventudetech_remember", JSON.stringify({
-        email: data.email, dataNasc: form.dataNasc,
-        nome: data.nome || "", formacao: data.formacao,
-      }));
+      localStorage.setItem(
+        "juventudetech_session",
+        JSON.stringify({ userData: data, timestamp: Date.now() }),
+      );
+      localStorage.setItem(
+        "juventudetech_remember",
+        JSON.stringify({
+          email: data.email,
+          dataNasc: form.dataNasc,
+          nome: data.nome || "",
+          formacao: data.formacao,
+        }),
+      );
     } catch {
       exibirPopup("Erro de conexão com o servidor.", "erro");
     }
@@ -114,11 +145,16 @@ export default function App() {
   const carregarHistorico = useCallback(async () => {
     if (!user?.email || user?.role === "admin" || !user?.token) return;
     try {
-      const res = await fetch(`${API_URL}/historico/aluno/${user.email.trim().toLowerCase()}`, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
+      const res = await fetch(
+        `${API_URL}/historico/aluno/${user.email.trim().toLowerCase()}`,
+        {
+          headers: { Authorization: `Bearer ${user.token}` },
+        },
+      );
       if (res.ok) setHistorico(await res.json());
-    } catch {}
+    } catch (error) {
+      console.error("Erro ao carregar histórico:", error);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -129,19 +165,28 @@ export default function App() {
   }, [user?.email, carregarHistorico]);
 
   const baterPonto = async (extra = {}) => {
-    if (!user?.email || !user?.token) return exibirPopup("Sessão expirada. Faça login novamente.", "erro");
+    if (!user?.email || !user?.token)
+      return exibirPopup("Sessão expirada. Faça login novamente.", "erro");
     try {
       const res = await fetchComToken("/ponto", "POST", {
         aluno_id: user.email.trim().toLowerCase(),
         ...extra,
       });
       const data = await res.json();
-      if (!res.ok) return exibirPopup(data.error || "Erro ao registrar ponto.", "erro");
+      if (!res.ok)
+        return exibirPopup(data.error || "Erro ao registrar ponto.", "erro");
       exibirPopup(data.msg, "sucesso");
       await carregarHistorico();
       if (!extra.nota) {
         const horarioFim = getHorarioAulao(user.formacao).fim;
-        setTimeout(() => exibirPopup(`📌 Lembrete: o check-out abre perto do encerramento do aulão (${horarioFim}).`, "aviso"), 1500);
+        setTimeout(
+          () =>
+            exibirPopup(
+              `📌 Lembrete: o check-out abre perto do encerramento do aulão (${horarioFim}).`,
+              "aviso",
+            ),
+          1500,
+        );
       }
       setFeedback({ nota: 0, revisao: "", modal: false });
     } catch {
@@ -158,13 +203,24 @@ export default function App() {
 
   if (!user) {
     if (showManualPublico) {
-      return <Manual onVoltar={() => setShowManualPublico(false)} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} publico />;
+      return (
+        <Manual
+          onVoltar={() => setShowManualPublico(false)}
+          isDarkMode={isDarkMode}
+          setIsDarkMode={setIsDarkMode}
+          publico
+        />
+      );
     }
     return (
       <Login
-        form={form} setForm={setForm} handleLogin={handleLogin}
-        dadosSalvos={dadosSalvos} setDadosSalvos={setDadosSalvos}
-        isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode}
+        form={form}
+        setForm={setForm}
+        handleLogin={handleLogin}
+        dadosSalvos={dadosSalvos}
+        setDadosSalvos={setDadosSalvos}
+        isDarkMode={isDarkMode}
+        setIsDarkMode={setIsDarkMode}
         onAbrirManual={() => setShowManualPublico(true)}
       />
     );
@@ -177,11 +233,11 @@ export default function App() {
   const horarioCurso = getHorarioAulao(user.formacao);
 
   const NAV_ADMIN = [
-    { key: "home",      label: "Home" },
-    { key: "admin",     label: "Dashboard" },
-    { key: "limpeza",   label: "Edição" },
-    { key: "importacao",label: "Importação" },
-    { key: "manual",    label: "Manual" },
+    { key: "home", label: "Home" },
+    { key: "admin", label: "Dashboard" },
+    { key: "limpeza", label: "Edição" },
+    { key: "importacao", label: "Importação" },
+    { key: "manual", label: "Manual" },
   ];
 
   return (
@@ -194,12 +250,18 @@ export default function App() {
       {/* HEADER */}
       <header className="glass-header">
         <div className="brand-logo" onClick={() => setView("home")}>
-          <img src="/juvetech-logo.png" alt="Juventude Tech" className="brand-logo-img" />
+          <img
+            src="/juvetech-logo.png"
+            alt="Juventude Tech"
+            className="brand-logo-img"
+          />
           <div className="brand-text">
             Registro de Frequência
             <span>Juventude Tech</span>
           </div>
-          <div className="user-badge">{user.role === "admin" ? "Admin" : "Aluno"}</div>
+          <div className="user-badge">
+            {user.role === "admin" ? "Admin" : "Aluno"}
+          </div>
         </div>
 
         <div className="header-right">
@@ -217,18 +279,32 @@ export default function App() {
               ))
             ) : (
               <>
-                <button className="btn-action-circle" title="Manual do Aluno" onClick={() => setView("manual")}>
+                <button
+                  className="btn-action-circle"
+                  title="Manual do Aluno"
+                  onClick={() => setView("manual")}
+                >
                   📘
                 </button>
-                <button className="btn-action-circle" title="Meu Perfil" onClick={() => setView("perfil")}>
+                <button
+                  className="btn-action-circle"
+                  title="Meu Perfil"
+                  onClick={() => setView("perfil")}
+                >
                   👤
                 </button>
               </>
             )}
-            <button className="btn-action-circle" title="Alternar Tema" onClick={() => setIsDarkMode(!isDarkMode)}>
+            <button
+              className="btn-action-circle"
+              title="Alternar Tema"
+              onClick={() => setIsDarkMode(!isDarkMode)}
+            >
               {isDarkMode ? "○" : "●"}
             </button>
-            <button className="btn-secondary" onClick={logout}>Sair</button>
+            <button className="btn-secondary" onClick={logout}>
+              Sair
+            </button>
           </div>
         </div>
       </header>
@@ -245,7 +321,11 @@ export default function App() {
       ) : view === "manual" ? (
         <Manual onVoltar={() => setView("home")} />
       ) : view === "perfil" && user.role !== "admin" ? (
-        <Perfil user={user} setUser={setUser} onVoltar={() => setView("home")} />
+        <Perfil
+          user={user}
+          setUser={setUser}
+          onVoltar={() => setView("home")}
+        />
       ) : (
         /* ALUNO HOME */
         <main className="aluno-main-wrapper">
@@ -253,11 +333,24 @@ export default function App() {
           <div className="aula-card">
             <div className="card-header-info">
               <div>
-                <p className="text-muted text-sm">{new Date().toLocaleDateString("pt-BR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
-                <div className="flex items-center gap-8 mt-12" style={{ flexWrap: "wrap" }}>
+                <p className="text-muted text-sm">
+                  {new Date().toLocaleDateString("pt-BR", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
+                <div
+                  className="flex items-center gap-8 mt-12"
+                  style={{ flexWrap: "wrap" }}
+                >
                   <h2>Olá, {nomeExibicao}!</h2>
                   {formacaoInfo && (
-                    <span className={`turma-badge ${user.formacao}`} style={{ fontFamily: "var(--font-body)" }}>
+                    <span
+                      className={`turma-badge ${user.formacao}`}
+                      style={{ fontFamily: "var(--font-body)" }}
+                    >
                       {formacaoInfo.nome}
                     </span>
                   )}
@@ -267,7 +360,12 @@ export default function App() {
 
             <div className="info-banner">
               <span>ℹ️</span>
-              <span>Check-in e check-out só ficam disponíveis aos <strong>sábados de aulão</strong>, dentro da janela de horário do seu curso. De segunda a sexta, a frequência é controlada pelo Moodle.</span>
+              <span>
+                Check-in e check-out só ficam disponíveis aos{" "}
+                <strong>sábados de aulão</strong>, dentro da janela de horário
+                do seu curso. De segunda a sexta, a frequência é controlada pelo
+                Moodle.
+              </span>
             </div>
 
             {/* BOTÕES PONTO */}
@@ -275,7 +373,9 @@ export default function App() {
               const janelaReal = avaliarJanelaPonto(user.formacao);
               const { ehDiaDeAulao, podeCheckIn, podeCheckOut } = janelaReal;
               const hojeISO = new Date().toLocaleDateString("en-CA");
-              const registroHoje = historico.find((h) => h.data?.substring(0, 10) === hojeISO);
+              const registroHoje = historico.find(
+                (h) => h.data?.substring(0, 10) === hojeISO,
+              );
               const jaFezIn = !!registroHoje?.check_in;
               const jaFezOut = !!registroHoje?.check_out;
 
@@ -287,11 +387,17 @@ export default function App() {
                       disabled={jaFezIn}
                       onClick={() => {
                         if (!ehDiaDeAulao) {
-                          exibirPopup("Hoje não é dia de aulão do seu curso. A presença é registrada apenas nos sábados do cronograma.", "erro");
+                          exibirPopup(
+                            "Hoje não é dia de aulão do seu curso. A presença é registrada apenas nos sábados do cronograma.",
+                            "erro",
+                          );
                           return;
                         }
                         if (!podeCheckIn) {
-                          exibirPopup(`Check-in disponível próximo ao horário do aulão (${horarioCurso.inicio}).`, "erro");
+                          exibirPopup(
+                            `Check-in disponível próximo ao horário do aulão (${horarioCurso.inicio}).`,
+                            "erro",
+                          );
                           return;
                         }
                         baterPonto();
@@ -303,9 +409,15 @@ export default function App() {
                       className={`btn-ponto out ${jaFezOut ? "concluido" : ""}`}
                       disabled={jaFezOut || !jaFezIn}
                       onClick={() => {
-                        if (!jaFezIn) { exibirPopup("Faça o check-in primeiro!", "erro"); return; }
+                        if (!jaFezIn) {
+                          exibirPopup("Faça o check-in primeiro!", "erro");
+                          return;
+                        }
                         if (!ehDiaDeAulao || !podeCheckOut) {
-                          exibirPopup(`Check-out disponível próximo ao encerramento do aulão (${horarioCurso.fim}).`, "erro");
+                          exibirPopup(
+                            `Check-out disponível próximo ao encerramento do aulão (${horarioCurso.fim}).`,
+                            "erro",
+                          );
                           return;
                         }
                         setFeedback({ ...feedback, modal: true });
@@ -319,7 +431,9 @@ export default function App() {
                   <div className="horarios-box">
                     <div className="horario-item">
                       <span className="horario-label">Entrada</span>
-                      <span className="horario-value">{horarioCurso.inicio}</span>
+                      <span className="horario-value">
+                        {horarioCurso.inicio}
+                      </span>
                     </div>
                     <div className="horario-divider" />
                     <div className="horario-item">
@@ -334,7 +448,10 @@ export default function App() {
                   </div>
 
                   {janelaReal.tema && (
-                    <p className="text-xs text-muted mt-8" style={{ textAlign: "center" }}>
+                    <p
+                      className="text-xs text-muted mt-8"
+                      style={{ textAlign: "center" }}
+                    >
                       Tema do aulão de hoje: <strong>{janelaReal.tema}</strong>
                     </p>
                   )}
@@ -346,18 +463,29 @@ export default function App() {
             <div className="stats-grid mt-20">
               <div className="stat-card">
                 <span className="stat-label">✅ Total de Presenças</span>
-                <div className="stat-value text-success-c">{totalPresencas}</div>
+                <div className="stat-value text-success-c">
+                  {totalPresencas}
+                </div>
               </div>
 
               <div className="stat-card">
                 <span className="stat-label">📅 Próximas Aulas</span>
                 <ul>
-                  {proximasAulas.length > 0 ? proximasAulas.map((d, i) => (
-                    <li key={i}>
-                      <strong>{d}</strong>
-                      <span className="text-muted" style={{ marginLeft: 6, fontSize: "0.72rem" }}>{horarioCurso.inicio}h</span>
-                    </li>
-                  )) : <li className="text-muted">Sem aulas agendadas</li>}
+                  {proximasAulas.length > 0 ? (
+                    proximasAulas.map((d, i) => (
+                      <li key={i}>
+                        <strong>{d}</strong>
+                        <span
+                          className="text-muted"
+                          style={{ marginLeft: 6, fontSize: "0.72rem" }}
+                        >
+                          {horarioCurso.inicio}h
+                        </span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-muted">Sem aulas agendadas</li>
+                  )}
                 </ul>
               </div>
 
@@ -365,18 +493,29 @@ export default function App() {
                 <span className="stat-label">📊 Frequência</span>
                 {(() => {
                   const total = obterDatasOcorridas(user.formacao).length;
-                  const pct = total > 0 ? Math.round((totalPresencas / total) * 100) : 0;
+                  const pct =
+                    total > 0 ? Math.round((totalPresencas / total) * 100) : 0;
                   return (
                     <>
                       <div className="stat-value">{pct}%</div>
                       <div style={{ marginTop: 8 }}>
                         <div className="presence-bar">
-                          <div className="presence-bar-fill" style={{
-                            width: `${pct}%`,
-                            background: pct >= 75 ? "var(--success)" : pct >= 50 ? "var(--warning)" : "var(--danger)",
-                          }} />
+                          <div
+                            className="presence-bar-fill"
+                            style={{
+                              width: `${pct}%`,
+                              background:
+                                pct >= 75
+                                  ? "var(--success)"
+                                  : pct >= 50
+                                    ? "var(--warning)"
+                                    : "var(--danger)",
+                            }}
+                          />
                         </div>
-                        <div className="text-xs text-muted mt-8">{totalPresencas} de {total} aulas</div>
+                        <div className="text-xs text-muted mt-8">
+                          {totalPresencas} de {total} aulas
+                        </div>
                       </div>
                     </>
                   );
@@ -386,11 +525,18 @@ export default function App() {
               <div className="stat-card">
                 <span className="stat-label">🎓 Formação</span>
                 <div style={{ marginTop: 8 }}>
-                  <div className={`tag-formacao tag-${user.formacao}`} style={{ marginBottom: 8, fontSize: "0.72rem" }}>
+                  <div
+                    className={`tag-formacao tag-${user.formacao}`}
+                    style={{ marginBottom: 8, fontSize: "0.72rem" }}
+                  >
                     {formacaoInfo?.tag || user.formacao}
                   </div>
-                  <div className="text-sm fw-bold">{getNomeFormacao(user.formacao)}</div>
-                  <div className="text-xs text-muted">{formacaoInfo?.horas}</div>
+                  <div className="text-sm fw-bold">
+                    {getNomeFormacao(user.formacao)}
+                  </div>
+                  <div className="text-xs text-muted">
+                    {formacaoInfo?.horas}
+                  </div>
                 </div>
               </div>
             </div>
@@ -412,26 +558,42 @@ export default function App() {
                 <tbody>
                   {historico.length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="text-center text-muted" style={{ padding: "32px" }}>
+                      <td
+                        colSpan="4"
+                        className="text-center text-muted"
+                        style={{ padding: "32px" }}
+                      >
                         Nenhum registro encontrado.
                       </td>
                     </tr>
                   ) : (
                     historico.map((h, i) => {
                       const checkIn = h.check_in
-                        ? (h.check_in.includes("T") ? h.check_in.split("T")[1].substring(0, 5) : h.check_in.substring(0, 5))
+                        ? h.check_in.includes("T")
+                          ? h.check_in.split("T")[1].substring(0, 5)
+                          : h.check_in.substring(0, 5)
                         : "--:--";
                       const checkOut = h.check_out
-                        ? (h.check_out.includes("T") ? h.check_out.split("T")[1].substring(0, 5) : h.check_out.substring(0, 5))
+                        ? h.check_out.includes("T")
+                          ? h.check_out.split("T")[1].substring(0, 5)
+                          : h.check_out.substring(0, 5)
                         : "--:--";
                       const completo = h.check_in && h.check_out;
                       return (
                         <tr key={i}>
-                          <td>{new Date(h.data).toLocaleDateString("pt-BR", { timeZone: "UTC" })}</td>
-                          <td><strong>{checkIn}</strong></td>
+                          <td>
+                            {new Date(h.data).toLocaleDateString("pt-BR", {
+                              timeZone: "UTC",
+                            })}
+                          </td>
+                          <td>
+                            <strong>{checkIn}</strong>
+                          </td>
                           <td>{checkOut}</td>
                           <td>
-                            <span className={`status-pill ${completo ? "ok" : "warn"}`}>
+                            <span
+                              className={`status-pill ${completo ? "ok" : "warn"}`}
+                            >
                               {completo ? "✓ Completo" : "⏳ Em aberto"}
                             </span>
                           </td>
@@ -453,12 +615,22 @@ export default function App() {
             <div className="modal-header">
               <div>
                 <h3>Finalizar Check-out</h3>
-                <p className="text-muted text-sm">Como foi sua experiência na aula de hoje?</p>
+                <p className="text-muted text-sm">
+                  Como foi sua experiência na aula de hoje?
+                </p>
               </div>
-              <button className="modal-close" onClick={() => setFeedback({ ...feedback, modal: false })}>✕</button>
+              <button
+                className="modal-close"
+                onClick={() => setFeedback({ ...feedback, modal: false })}
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="flex gap-8 mb-16" style={{ justifyContent: "center" }}>
+            <div
+              className="flex gap-8 mb-16"
+              style={{ justifyContent: "center" }}
+            >
               {[1, 2, 3, 4, 5].map((n) => (
                 <button
                   key={n}
@@ -474,18 +646,25 @@ export default function App() {
               className="input-notes w-full mb-16"
               placeholder="Algum comentário, dúvida ou sugestão?"
               value={feedback.revisao}
-              onChange={(e) => setFeedback({ ...feedback, revisao: e.target.value })}
+              onChange={(e) =>
+                setFeedback({ ...feedback, revisao: e.target.value })
+              }
             />
 
             <div className="flex gap-8">
               <button
                 className="btn-ponto out"
                 style={{ flex: 1 }}
-                onClick={() => baterPonto({ nota: feedback.nota, revisao: feedback.revisao })}
+                onClick={() =>
+                  baterPonto({ nota: feedback.nota, revisao: feedback.revisao })
+                }
               >
                 Confirmar Saída
               </button>
-              <button className="btn-secondary" onClick={() => setFeedback({ ...feedback, modal: false })}>
+              <button
+                className="btn-secondary"
+                onClick={() => setFeedback({ ...feedback, modal: false })}
+              >
                 Voltar
               </button>
             </div>

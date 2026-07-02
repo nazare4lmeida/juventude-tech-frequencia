@@ -222,17 +222,13 @@ app.post("/api/login", async (req, res) => {
             .status(401)
             .json({ error: "Data de nascimento incorreta." });
       }
-      if (aluno.formacao && formacao && aluno.formacao !== formacao)
-        return res.status(403).json({
-          error: `Você já está registrado na formação ${aluno.formacao}.`,
-        });
-      if (formacao && !aluno.formacao) {
-        await supabase
-          .from("alunos")
-          .update({ formacao })
-          .eq("email", emailFormatado);
-        aluno.formacao = formacao;
-      }
+if (aluno.formacao && formacao && aluno.formacao !== formacao) {
+  await supabase
+    .from("alunos")
+    .update({ formacao })
+    .eq("email", emailFormatado);
+  aluno.formacao = formacao;
+}
     }
 
     const token = jwt.sign(
