@@ -109,7 +109,7 @@ const avaliarJanelaPonto = (formacaoId) => {
 // Remover após o dia.
 if (hoje === "2026-07-04") {
   const horaDecimal = horaParaDecimal(hora);
-  const aberto = horaDecimal >= 8.0 && horaDecimal <= 12.30;
+  const aberto = horaDecimal >= 8.0 && horaDecimal <= 12.5;
   return { ehDiaDeAulao: true, podeCheckIn: aberto, podeCheckOut: aberto, inicio: "08:00", fim: "12:00", hoje };
 }
 
