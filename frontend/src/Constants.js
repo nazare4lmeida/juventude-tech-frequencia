@@ -195,8 +195,8 @@ const horaParaDecimal = (hhmm) => {
 export const obterDatasOcorridas = (formacaoId) => {
   const agora = new Date();
   const datas = CRONOGRAMAS[formacaoId] || [];
-  const fim = getHorarioAulao(formacaoId).fim;
-  return datas.filter((d) => new Date(`${d}T${fim}:00`) <= agora);
+  const { inicio } = getHorarioAulao(formacaoId);
+  return datas.filter((d) => new Date(`${d}T${inicio}:00`) <= agora);
 };
 
 export const obterAulasOcorridas = (formacaoId) =>
