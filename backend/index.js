@@ -29,20 +29,35 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // ==========================================
 const CRONOGRAMAS = {
   fullstack: [
-    "2026-07-04", "2026-07-11", "2026-07-18", "2026-07-25",
-    "2026-08-01", "2026-08-08", "2026-08-22", "2026-08-29",
+    "2026-07-04",
+    "2026-07-11",
+    "2026-07-18",
+    "2026-07-25",
+    "2026-08-01",
+    "2026-08-08",
+    "2026-08-22",
+    "2026-08-29",
   ],
   "mkt-dig": [
-    "2026-07-04", "2026-07-11", "2026-07-18", "2026-07-25",
-    "2026-08-01", "2026-08-08", "2026-08-22",
+    "2026-07-04",
+    "2026-07-11",
+    "2026-07-18",
+    "2026-07-25",
+    "2026-08-01",
+    "2026-08-08",
+    "2026-08-22",
     // Corrigido de "28/08" (sexta-feira, provável erro de digitação
     // na planilha original) para o sábado 29/08. Ver nota detalhada
     // em frontend/src/Constants.js.
     "2026-08-29",
   ],
   "ia-gen": [
-    "2026-07-04", "2026-07-11", "2026-07-18", "2026-07-25",
-    "2026-08-01", "2026-08-08",
+    "2026-07-04",
+    "2026-07-11",
+    "2026-07-18",
+    "2026-07-25",
+    "2026-08-01",
+    "2026-08-08",
   ],
 };
 
@@ -53,7 +68,7 @@ const CRONOGRAMAS = {
 // ==========================================
 const HORARIOS_AULAO = {
   fullstack: { inicio: "08:00", fim: "12:00" },
-  "ia-gen":  { inicio: "08:00", fim: "12:00" },
+  "ia-gen": { inicio: "08:00", fim: "12:00" },
   "mkt-dig": { inicio: "08:00", fim: "12:00" },
 };
 
@@ -93,7 +108,7 @@ const JANELA_FORCADA_ABERTA = process.env.FORCAR_JANELA_ABERTA === "true";
 if (JANELA_FORCADA_ABERTA) {
   console.warn(
     "⚠️  FORCAR_JANELA_ABERTA=true — check-in/check-out liberados o tempo todo. " +
-    "NUNCA deixe isso ligado em produção.",
+      "NUNCA deixe isso ligado em produção.",
   );
 }
 
@@ -102,16 +117,30 @@ const avaliarJanelaPonto = (formacaoId) => {
   const { inicio, fim } = getHorarioAulao(formacaoId);
 
   if (JANELA_FORCADA_ABERTA) {
-    return { ehDiaDeAulao: true, podeCheckIn: true, podeCheckOut: true, inicio, fim, hoje };
+    return {
+      ehDiaDeAulao: true,
+      podeCheckIn: true,
+      podeCheckOut: true,
+      inicio,
+      fim,
+      hoje,
+    };
   }
 
   // 🗓️ Exceção pontual: 04/07/2026 — 1º aulão, janela aberta das 08:00 às 12:00.
-// Remover após o dia.
-if (hoje === "2026-07-04") {
-  const horaDecimal = horaParaDecimal(hora);
-  const aberto = horaDecimal >= 8.0 && horaDecimal <= 12.5;
-  return { ehDiaDeAulao: true, podeCheckIn: aberto, podeCheckOut: aberto, inicio: "08:00", fim: "12:00", hoje };
-}
+  // Remover após o dia.
+  if (hoje === "2026-07-04") {
+    const horaDecimal = horaParaDecimal(hora);
+    const aberto = horaDecimal >= 8.0 && horaDecimal <= 12.5;
+    return {
+      ehDiaDeAulao: true,
+      podeCheckIn: aberto,
+      podeCheckOut: aberto,
+      inicio: "08:00",
+      fim: "12:00",
+      hoje,
+    };
+  }
 
   const horaDecimal = horaParaDecimal(hora);
 
@@ -124,9 +153,13 @@ if (hoje === "2026-07-04") {
   const depois = TOLERANCIA_DEPOIS_MIN / 60;
 
   const podeCheckIn =
-    ehDiaDeAulao && horaDecimal >= inicioDec - antes && horaDecimal <= inicioDec + depois;
+    ehDiaDeAulao &&
+    horaDecimal >= inicioDec - antes &&
+    horaDecimal <= inicioDec + depois;
   const podeCheckOut =
-    ehDiaDeAulao && horaDecimal >= fimDec - antes && horaDecimal <= fimDec + depois;
+    ehDiaDeAulao &&
+    horaDecimal >= fimDec - antes &&
+    horaDecimal <= fimDec + depois;
 
   return { ehDiaDeAulao, podeCheckIn, podeCheckOut, inicio, fim, hoje };
 };
@@ -230,13 +263,13 @@ app.post("/api/login", async (req, res) => {
             .status(401)
             .json({ error: "Data de nascimento incorreta." });
       }
-if (aluno.formacao && formacao && aluno.formacao !== formacao) {
-  await supabase
-    .from("alunos")
-    .update({ formacao })
-    .eq("email", emailFormatado);
-  aluno.formacao = formacao;
-}
+      if (aluno.formacao && formacao && aluno.formacao !== formacao) {
+        await supabase
+          .from("alunos")
+          .update({ formacao })
+          .eq("email", emailFormatado);
+        aluno.formacao = formacao;
+      }
     }
 
     const token = jwt.sign(
@@ -286,7 +319,8 @@ app.put("/api/aluno/perfil", verificarToken, async (req, res) => {
 app.post("/api/ponto", verificarToken, async (req, res) => {
   const { aluno_id, nota, revisao } = req.body;
   const emailBusca = (aluno_id || "").trim().toLowerCase();
-  if (!emailBusca) return res.status(400).json({ error: "E-mail é obrigatório." });
+  if (!emailBusca)
+    return res.status(400).json({ error: "E-mail é obrigatório." });
 
   try {
     // Busca a formação do aluno — é ela que define o cronograma e o
@@ -298,10 +332,13 @@ app.post("/api/ponto", verificarToken, async (req, res) => {
       .maybeSingle();
     if (erroAluno) throw erroAluno;
     if (!aluno)
-      return res.status(404).json({ error: "Aluno não encontrado. Faça login novamente." });
+      return res
+        .status(404)
+        .json({ error: "Aluno não encontrado. Faça login novamente." });
     if (!aluno.formacao)
       return res.status(400).json({
-        error: "Sua formação ainda não está definida. Atualize seu perfil ou contate o suporte.",
+        error:
+          "Sua formação ainda não está definida. Atualize seu perfil ou contate o suporte.",
       });
 
     const janela = avaliarJanelaPonto(aluno.formacao);
@@ -323,7 +360,8 @@ app.post("/api/ponto", verificarToken, async (req, res) => {
       // ---- TENTATIVA DE CHECK-IN ----
       if (!janela.ehDiaDeAulao)
         return res.status(403).json({
-          error: "Hoje não há aulão presencial registrado para o seu curso. A presença é registrada apenas nos sábados de aulão.",
+          error:
+            "Hoje não há aulão presencial registrado para o seu curso. A presença é registrada apenas nos sábados de aulão.",
         });
       if (!janela.podeCheckIn)
         return res.status(403).json({
@@ -452,7 +490,6 @@ app.get(
         query = query.or(`nome.ilike.%${termo}%,email.ilike.%${termo}%`);
       const { data: alunos, error } = await query.range(0, 5000);
 
-
       if (error) throw error;
 
       let resultadoFinal = alunos;
@@ -464,8 +501,9 @@ app.get(
       ) {
         const { data: presencas } = await supabase
           .from("presencas")
-          .select("aluno_email, check_in, check_out")
-          .eq("data", dataAlvo);
+          .select("aluno_email, check_in, check_out, data")
+          .gte("data", `${dataAlvo}T00:00:00`)
+          .lte("data", `${dataAlvo}T23:59:59`);
 
         let emailsFiltrados = [];
         if (status === "pendente_saida") {
@@ -550,7 +588,6 @@ app.get(
     }
   },
 );
-
 
 app.get(
   "/api/admin/duplicados",
@@ -1023,9 +1060,7 @@ app.get("/api/health", (_, res) => res.json({ status: "online" }));
 // process.env.PORT (ou 3001 como padrão local).
 if (!process.env.VERCEL) {
   const PORT = process.env.PORT || 3001;
-  app.listen(PORT, () =>
-    console.log(`🚀 Backend rodando na porta ${PORT}`),
-  );
+  app.listen(PORT, () => console.log(`🚀 Backend rodando na porta ${PORT}`));
 }
 
 module.exports = app;
