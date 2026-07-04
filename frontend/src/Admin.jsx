@@ -950,6 +950,69 @@ export default function Admin({ user, setView }) {
                 <button className="btn-accent w-full" onClick={registrarManual}>
                   ➕ Registrar Presença Manual
                 </button>
+
+                <div className="divider" />
+
+                <div>
+                  <label
+                    className="text-xs text-muted fw-bold"
+                    style={{ display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}
+                  >
+                    Adicionar check-out em registro existente
+                  </label>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div>
+                      <label
+                        className="text-xs text-muted"
+                        style={{ display: "block", marginBottom: 4 }}
+                      >
+                        Data do registro
+                      </label>
+                      <input
+                        type="date"
+                        className="input-modern"
+                        value={manualPonto.data}
+                        onChange={(e) =>
+                          setManualPonto({ ...manualPonto, data: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label
+                        className="text-xs text-muted"
+                        style={{ display: "block", marginBottom: 4 }}
+                      >
+                        Horário de saída
+                      </label>
+                      <input
+                        type="time"
+                        className="input-modern"
+                        value={manualPonto.check_out}
+                        onChange={(e) =>
+                          setManualPonto({ ...manualPonto, check_out: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <button
+                    className="btn-primary w-full"
+                    style={{ marginTop: 10 }}
+                    onClick={async () => {
+                      if (!confirm("Adicionar check-out neste registro?")) return;
+                      try {
+                        const res = await fetch(`${API_URL}/admin/checkout-manual`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.token}` },
+                          body: JSON.stringify({ email: modalAluno.email, data: manualPonto.data, check_out: manualPonto.check_out }),
+                        });
+                        if (res.ok) { alert("Check-out adicionado!"); abrirModal(modalAluno); }
+                        else { const e = await res.json(); alert(e.error); }
+                      } catch { alert("Erro de conexão."); }
+                    }}
+                  >
+                    ✏️ Adicionar Check-out
+                  </button>
+                </div>
               </div>
             )}
           </div>

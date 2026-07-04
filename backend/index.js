@@ -764,6 +764,36 @@ app.post(
   },
 );
 
+app.patch(
+  "/api/admin/checkout-manual",
+  verificarToken,
+  verificarAdmin,
+  async (req, res) => {
+    const { email, data, check_out } = req.body;
+    const ts = check_out.includes("T") ? check_out : `${data}T${check_out}:00`;
+    try {
+      const { data: registro, error: errBusca } = await supabase
+        .from("presencas")
+        .select("id")
+        .eq("aluno_email", email.trim().toLowerCase())
+        .eq("data", data)
+        .maybeSingle();
+      if (errBusca) throw errBusca;
+      if (!registro)
+        return res.status(404).json({ error: "Nenhum registro de check-in encontrado para esta data." });
+      const { error } = await supabase
+        .from("presencas")
+        .update({ check_out: ts })
+        .eq("id", registro.id);
+      if (error) throw error;
+      res.json({ msg: "Check-out adicionado com sucesso!" });
+    } catch (err) {
+      console.error("ERRO CHECKOUT MANUAL:", err);
+      res.status(500).json({ error: "Erro ao adicionar check-out." });
+    }
+  },
+);
+
 app.post(
   "/api/admin/reset-session",
   verificarToken,
