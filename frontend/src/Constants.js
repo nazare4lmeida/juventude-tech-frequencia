@@ -67,7 +67,7 @@ export const FORMACOES = [
 // Sempre volte para "WINDOW_CLOSE" aqui antes de commitar/subir para
 // produção — em produção (npm run build), deixe sempre assim.
 // =====================================================================
-export const MODO_JANELA = "WINDOW_CLOSE";
+export const MODO_JANELA = "WINDOW_OPEN";
 // 🧪 MODO TESTE — liberado até encerrar os testes de hoje.
 // Antes de subir para produção, volte para: "WINDOW_CLOSE"
 
