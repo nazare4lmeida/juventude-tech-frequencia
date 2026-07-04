@@ -494,8 +494,7 @@ app.get(
         const { data: presencas } = await supabase
           .from("presencas")
           .select("aluno_email, check_in, check_out, data")
-          .gte("data", `${dataAlvo}T00:00:00`)
-          .lte("data", `${dataAlvo}T23:59:59`);
+          .eq("data", dataAlvo);
 
         const presencasNormalizadas = (presencas || []).map((p) => ({
           ...p,
@@ -1011,8 +1010,7 @@ app.get(
       let queryHoje = supabase
         .from("presencas")
         .select("check_in, check_out")
-        .gte("data", `${dataAlvo}T00:00:00`)
-        .lte("data", `${dataAlvo}T23:59:59`);
+        .eq("data", dataAlvo);
       if (turma !== "todos")
         queryHoje = queryHoje.in("aluno_email", emailsTurma);
       const { data: presencasDia, error: errH } = await queryHoje;
