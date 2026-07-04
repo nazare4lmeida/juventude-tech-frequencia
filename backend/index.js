@@ -503,9 +503,8 @@ app.get(
 
         let emailsFiltrados = [];
         if (status === "pendente_saida") {
-          // Fez check-in mas NÃO fez check-out
           emailsFiltrados = presencasNormalizadas
-            .filter((p) => p.check_in && !p.check_out)
+            .filter((p) => p.check_in && p.check_out)
             .map((p) => p.aluno_email);
         } else if (status === "checkout_antecipado") {
           emailsFiltrados = presencasNormalizadas
@@ -527,7 +526,7 @@ app.get(
             .filter((a) => {
               const email = a.email?.trim().toLowerCase();
               const p = presencasHoje[email];
-              return p && p.check_in && p.check_out;
+              return p && p.check_in && !p.check_out;
             })
             .map((a) => {
               const email = a.email?.trim().toLowerCase();
