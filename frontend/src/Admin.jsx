@@ -397,8 +397,8 @@ export default function Admin({ user, setView }) {
               style={{ marginBottom: 0, minWidth: 180 }}
             >
               <option value="todos">Todos os Status</option>
-              <option value="presentes_no_dia">✅ Presentes Hoje</option>
-              <option value="pendente_saida">⏳ Pendente Saída</option>
+<option value="pendente_saida">✅ Presentes Hoje</option>
+<option value="presentes_no_dia">⏳ Pendente Saída</option>
               <option value="checkout_antecipado">⚡ Saída Antecipada</option>
             </select>
             <input
