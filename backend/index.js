@@ -323,8 +323,6 @@ app.post("/api/ponto", verificarToken, async (req, res) => {
     return res.status(400).json({ error: "E-mail é obrigatório." });
 
   try {
-    // Busca a formação do aluno — é ela que define o cronograma e o
-    // horário válidos para bater ponto.
     const { data: aluno, error: erroAluno } = await supabase
       .from("alunos")
       .select("formacao")
@@ -357,7 +355,6 @@ app.post("/api/ponto", verificarToken, async (req, res) => {
     const aindaNaoFezCheckin = !pontoExistente;
 
     if (aindaNaoFezCheckin) {
-      // ---- TENTATIVA DE CHECK-IN ----
       if (!janela.ehDiaDeAulao)
         return res.status(403).json({
           error:
@@ -380,7 +377,6 @@ app.post("/api/ponto", verificarToken, async (req, res) => {
         ponto: novoPonto[0],
       });
     } else {
-      // ---- TENTATIVA DE CHECK-OUT ----
       if (pontoExistente.check_out)
         return res.json({ msg: "Você já concluiu sua presença de hoje." });
       if (!janela.podeCheckOut)
@@ -410,8 +406,7 @@ app.post("/api/ponto", verificarToken, async (req, res) => {
 });
 
 // ==========================================
-// JANELA DE PONTO — usado pelo frontend para exibir contagem
-// regressiva / mensagens precisas sem duplicar a regra de negócio.
+// JANELA DE PONTO
 // ==========================================
 app.get("/api/janela-ponto/:formacao", verificarToken, (req, res) => {
   const janela = avaliarJanelaPonto(req.params.formacao);
@@ -420,9 +415,6 @@ app.get("/api/janela-ponto/:formacao", verificarToken, (req, res) => {
 
 // ==========================================
 // ADMIN — AUDITORIA UNIFICADA
-// Retorna alunos com total_presencas já calculado
-// filtrando pelo cronograma oficial de cada formação.
-// Uma única requisição substitui N+1 do frontend.
 // ==========================================
 
 app.get(
@@ -505,13 +497,19 @@ app.get(
           .gte("data", `${dataAlvo}T00:00:00`)
           .lte("data", `${dataAlvo}T23:59:59`);
 
+        const presencasNormalizadas = (presencas || []).map((p) => ({
+          ...p,
+          aluno_email: p.aluno_email?.trim().toLowerCase(),
+        }));
+
         let emailsFiltrados = [];
         if (status === "pendente_saida") {
-          emailsFiltrados = presencas
-            .filter((p) => !p.check_out)
+          // Fez check-in mas NÃO fez check-out
+          emailsFiltrados = presencasNormalizadas
+            .filter((p) => p.check_in && !p.check_out)
             .map((p) => p.aluno_email);
         } else if (status === "checkout_antecipado") {
-          emailsFiltrados = presencas
+          emailsFiltrados = presencasNormalizadas
             .filter((p) => {
               if (!p.check_out) return false;
               const hora = p.check_out.includes("T")
@@ -521,24 +519,32 @@ app.get(
             })
             .map((p) => p.aluno_email);
         } else if (status === "presentes_no_dia") {
-          const presencasHoje = presencas.reduce((acc, p) => {
+          // Fez check-in E check-out (presença completa)
+          const presencasHoje = presencasNormalizadas.reduce((acc, p) => {
             acc[p.aluno_email] = p;
             return acc;
           }, {});
           resultadoFinal = alunos
-            .filter((a) => presencasHoje[a.email])
-            .map((a) => ({
-              ...a,
-              check_in: presencasHoje[a.email]?.check_in,
-              check_out: presencasHoje[a.email]?.check_out,
-            }));
+            .filter((a) => {
+              const email = a.email?.trim().toLowerCase();
+              const p = presencasHoje[email];
+              return p && p.check_in && p.check_out;
+            })
+            .map((a) => {
+              const email = a.email?.trim().toLowerCase();
+              return {
+                ...a,
+                check_in: presencasHoje[email]?.check_in,
+                check_out: presencasHoje[email]?.check_out,
+              };
+            });
           return res.json({
             total: resultadoFinal.length,
             alunos: resultadoFinal,
           });
         }
         resultadoFinal = alunos.filter((a) =>
-          emailsFiltrados.includes(a.email),
+          emailsFiltrados.includes(a.email?.trim().toLowerCase()),
         );
       }
 
@@ -798,14 +804,9 @@ app.post(
   verificarToken,
   verificarAdmin,
   async (req, res) => {
-    // MAPEAMENTO MELHORADO: Aceita tanto o que o front manda quanto o que a planilha bruta mandaria
     const email = req.body.email || req.body.aluno_email;
     const nome = req.body.nome || req.body.nome_aluno;
-
-    // aceita front ou CSV bruto
     const curso = req.body.curso || req.body.formacao;
-
-    // aceita front ou CSV bruto
     const recorrencia =
       req.body.recorrencia || req.body.frequencia || req.body.tipo_recorrencia;
 
@@ -843,7 +844,6 @@ app.post(
         });
       }
 
-      // Busca se o aluno já existe para decidir entre Update ou Insert
       const { data: alunosPorEmail, error: erroBuscaEmail } = await supabase
         .from("alunos")
         .select("*")
@@ -862,7 +862,6 @@ app.post(
       if (alunoExistente) {
         modo = "update";
 
-        // Incrementa o saldo apenas se for justificativa pontual ("uma vez")
         const novoSaldo = eSempre
           ? Number(alunoExistente.saldo_abonos || 0)
           : Number(alunoExistente.saldo_abonos || 0) + (eUmaVez ? 1 : 0);
@@ -870,7 +869,7 @@ app.post(
         const payloadUpdate = {
           email: emailFormatado,
           nome: nomeLimpo || alunoExistente.nome,
-          formacao: cursoNormalizado, // ISSO garante a correção da turma no banco
+          formacao: cursoNormalizado,
           justificou_ausencia: true,
           se_ausenta_sempre:
             Boolean(alunoExistente.se_ausenta_sempre) || eSempre,
@@ -906,7 +905,6 @@ app.post(
         alunoExistente = insertData[0];
       }
 
-      // Registro de Log na tabela de justificativas
       if (alunoExistente?.email) {
         await supabase.from("justificativas_logs").insert([
           {
@@ -931,6 +929,7 @@ app.post(
     }
   },
 );
+
 // ==========================================
 // HISTÓRICO DO ALUNO
 // ==========================================
@@ -979,7 +978,8 @@ app.get(
       let queryHoje = supabase
         .from("presencas")
         .select("check_in, check_out")
-        .eq("data", dataAlvo);
+        .gte("data", `${dataAlvo}T00:00:00`)
+        .lte("data", `${dataAlvo}T23:59:59`);
       if (turma !== "todos")
         queryHoje = queryHoje.in("aluno_email", emailsTurma);
       const { data: presencasDia, error: errH } = await queryHoje;
@@ -1052,12 +1052,6 @@ app.get(
 
 app.get("/api/health", (_, res) => res.json({ status: "online" }));
 
-// Em serverless (Vercel), a Vercel importa `app` diretamente e cuida do
-// listen — por isso pulamos aqui (variável VERCEL é definida
-// automaticamente pela plataforma). Em qualquer outro host (Render,
-// Railway, servidor próprio, localhost), precisamos chamar listen()
-// de verdade, escutando na porta que a plataforma indicar via
-// process.env.PORT (ou 3001 como padrão local).
 if (!process.env.VERCEL) {
   const PORT = process.env.PORT || 3001;
   app.listen(PORT, () => console.log(`🚀 Backend rodando na porta ${PORT}`));

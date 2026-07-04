@@ -100,8 +100,7 @@ export default function Admin({ user, setView }) {
   const buscarAlunos = useCallback(async (termo) => {
     setCarregando(true);
     try {
-      const res = await fetchComToken(`/admin/busca?termo=${encodeURIComponent(termo)}&turma=${filtroTurma}&status=${filtroStatus}&dataFiltro=${dataBusca}`);
-      if (res.ok) {
+const res = await fetchComToken(`/admin/busca?termo=${encodeURIComponent(termo)}&turma=${filtroTurma}&status=${filtroStatus}&dataFiltro=${dataBusca}&_=${Date.now()}`);      if (res.ok) {
         const d = await res.json();
         setAlunos(d.alunos || []);
         setTotalEncontrado(d.total || 0);
