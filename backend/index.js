@@ -88,8 +88,8 @@ const getHorarioAulao = (formacaoId) =>
 const obterDatasOcorridas = (formacaoId) => {
   const agora = new Date();
   const datas = CRONOGRAMAS[formacaoId] || [];
-  const fim = getHorarioAulao(formacaoId).fim;
-  return datas.filter((d) => new Date(`${d}T${fim}:00`) <= agora);
+  const { inicio } = getHorarioAulao(formacaoId);
+  return datas.filter((d) => new Date(`${d}T${inicio}:00`) <= agora);
 };
 
 // Avalia, no horário ATUAL de Brasília, se hoje é dia de aulão da
@@ -550,7 +550,7 @@ app.get(
 
       const { data: todasPresencas } = await supabase
         .from("presencas")
-        .select("aluno_email, data");
+        .select("aluno_email, data, check_in");
 
       const { data: logsJustificativa, error: errLogs } = await supabase
         .from("justificativas_logs")
@@ -571,6 +571,7 @@ app.get(
         const presencasValidas = (todasPresencas || []).filter((p) => {
           const d = p.data.includes("T") ? p.data.split("T")[0] : p.data;
           return (
+            p.check_in &&
             p.aluno_email?.trim().toLowerCase() === emailAlu &&
             datasValidas.has(d)
           );
@@ -780,7 +781,9 @@ app.patch(
         .maybeSingle();
       if (errBusca) throw errBusca;
       if (!registro)
-        return res.status(404).json({ error: "Nenhum registro de check-in encontrado para esta data." });
+        return res.status(404).json({
+          error: "Nenhum registro de check-in encontrado para esta data.",
+        });
       const { error } = await supabase
         .from("presencas")
         .update({ check_out: ts })
