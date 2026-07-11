@@ -137,7 +137,7 @@ export const HORARIOS_AULAO = {
 // de check-in/check-out fica aberta. Ex.: com 15/30, o check-in do
 // curso que começa às 08:00 libera às 07:45 e fecha às 08:30.
 export const TOLERANCIA_ANTES_MIN = 15;
-export const TOLERANCIA_DEPOIS_MIN = 50;
+export const TOLERANCIA_DEPOIS_MIN = 90;
 
 // =====================================================================
 // TEMAS DOS AULÕES (para exibir nas telas de aluno/admin)

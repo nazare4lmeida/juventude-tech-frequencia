@@ -75,7 +75,7 @@ const HORARIOS_AULAO = {
 // Tolerância (minutos) ao redor do horário oficial em que a janela de
 // check-in/check-out fica aberta.
 const TOLERANCIA_ANTES_MIN = 15;
-const TOLERANCIA_DEPOIS_MIN = 50;
+const TOLERANCIA_DEPOIS_MIN = 90;
 
 const horaParaDecimal = (hhmmss) => {
   const [h, m] = (hhmmss || "0:0").split(":").map(Number);
