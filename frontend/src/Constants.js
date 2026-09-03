@@ -128,7 +128,7 @@ export const CRONOGRAMAS = {
 // valor correspondente abaixo.
 // =====================================================================
 export const HORARIOS_AULAO = {
-  fullstack: { inicio: "08:00", fim: "12:00" },
+  "fullstack": { inicio: "08:00", fim: "12:00" },
   "ia-gen": { inicio: "08:00", fim: "12:00" },
   "mkt-dig": { inicio: "08:00", fim: "12:00" },
 };
@@ -152,6 +152,7 @@ export const TEMAS_AULOES = {
     "2026-08-08": "Módulo 02 — Front-End em JavaScript",
     "2026-08-22": "Módulo 03 — Desenvolvendo Back-End",
     "2026-08-29": "Módulo 03 — Desenvolvendo Back-End",
+    "2026-09-05": "Módulo 04 — Aula Final: Projeto Full Stack",
   },
   "mkt-dig": {
     "2026-07-04": "Planejamento de Marketing",
@@ -170,6 +171,7 @@ export const TEMAS_AULOES = {
     "2026-07-25": "Módulo 03 — Workflows e Data Lake",
     "2026-08-01": "Módulo 04 — Multiagentes de IA Generativa",
     "2026-08-08": "Módulo 04 — Multiagentes de IA Generativa",
+    "2026-09-05": "Módulo 05 — Projeto Final: IA Generativa",
   },
 };
 
